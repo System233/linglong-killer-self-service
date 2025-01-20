@@ -5,16 +5,13 @@ fi
 ROOT_DIR=$(dirname $(readlink -f "$0"))
 source $ROOT_DIR/env.sh
 TEMPLATE="$RES_DIR/template.yaml"
-MAIN_PKG="$1"
-APP_NAME=$2
-APP_DESC=$3
-APP_BASE=$4
+PKG_INFO_FILE=${1:-package.info}
 
 OUTPUT="${GEN_YAML_OUTPUT:-linglong.yaml}"
 
 function pkg_info_local() {
     field="$1"
-    cat package.info | sed -n "/^$field:/,/^[^ ]/p" | sed -e "s/^$field://" | grep '^\s' | sed -e "s/^\s*//"
+    cat "$PKG_INFO_FILE" | sed -n "/^$field:/,/^[^ ]/p" | sed -e "s/^$field://" | grep '^\s' | sed -e "s/^\s*//"
 }
 function pkg_info() {
     pkg="$1"
@@ -83,6 +80,7 @@ APP_VER="$APP_VER" perl -i -pe 's/{APP_VER}/$ENV{APP_VER}/' "$OUTPUT"
 APP_NAME="$APP_NAME" perl -i -pe 's/{APP_NAME}/$ENV{APP_NAME}/' "$OUTPUT"
 APP_BASE="$APP_BASE" perl -i -pe 's/{APP_BASE}/$ENV{APP_BASE}/' "$OUTPUT"
 APP_RUNTIME="$APP_RUNTIME" perl -i -pe 's/{APP_RUNTIME}/$ENV{APP_RUNTIME}/' "$OUTPUT"
+PKG_INFO_FILE="$PKG_INFO_FILE" perl -i -pe 's/{PKG_INFO_FILE}/$ENV{PKG_INFO_FILE}/' "$OUTPUT"
 
 LL_KILLER_EXEC=$(realpath "--relative-to=$(pwd)" "$LL_KILLER_SH") perl -i -pe 's/{LL_KILLER_EXEC}/$ENV{LL_KILLER_EXEC}/' "$OUTPUT"
 echo "$APP_SOURCES" >sources.list

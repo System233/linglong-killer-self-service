@@ -82,6 +82,51 @@ Description: 软件描述信息（可选，支持多行）
 
 出于安全考虑，不能在构建服务器上运行自定义的构建脚本，请在本地运行自定义构建脚本[TODO: 教程尚未编写]。
 
+## ll-killer命令说明
+
+```
+用法: ll-killer mode [...args]
+
+模式说明:
+  build-and-check                       构建并自动补全依赖
+  ldd-check <output>                    检查动态库依赖并记录日志
+                                        运行前必须至少使用ll-builder build构建一次项目
+  ldd-search <input> [found] [missing] 搜索动态库依赖
+                                        主机上必须安装apt-file
+                                        输出到 ldd-missing.log 和 ldd-found.log。
+  local  [...args]                      切换到隔离的APT环境。
+  generate <package.info>               生成linglong.yaml脚本。
+  shell                                 执行交互式 shell。
+  *                                     显示本帮助信息。
+
+ll-builder build 构建模式容器内模式:
+  root            切换到 root 模式，全局可写。
+  build           执行安装和构建脚本。
+  dpkg-install    使用 dpkg 安装模式安装sources目录下的deb。
+  extract         使用 dpkg 解压模式安装sources目录下的deb。
+  clean           清理搜集的依赖文件和目录。
+  copy            拷贝收集的依赖到$PREFIX。
+  install         清理并拷贝文件（clean + copy）。
+  setup           配置应用的快捷方式和图标文件。
+  dev             切换到隔离环境。
+  --              切换到默认的 root 模式。
+
+ll-killer 内部模式，除非你知道是什么，否则不要使用：
+  mount           挂载 FUSE 和根文件系统，准备合并目录。
+  pivot_root      切换根文件系统到合并目录，并执行 shell。
+  local-env       配置本地 APT 环境，绑定相关目录，更新包信息。
+  dev-host        配置开发主机环境，并切换根文件系统。
+
+示例:
+  ll-killer generate package.info       通过package.info生成linglong.yaml
+  ll-killer build-and-check             构建并自动补全依赖
+  ll-killer ldd-check ldd-check.log     检查容器内是否有缺失依赖，输出缺失文件名到ldd-check.log
+  ll-killer ldd-search ldd-check.log ldd-found.log ldd-missing.log 
+                                        搜索ldd-check.log中的依赖
+  ll-killer -- bash                     在容器内切换到root模式                
+                       
+```
+
 ## 贡献指南
 欢迎为项目贡献代码或建议！您可以通过以下方式参与：
 - 提交 Pull Request 修复 Bug 或添加新功能。

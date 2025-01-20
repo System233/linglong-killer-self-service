@@ -9,7 +9,7 @@ on:
 env:
   NO_INSTALL: false
   NO_BUILD: false
-  DEBUG: false
+  # DEBUG: false
   WORKING_DIR: /tmp/ll-killer
 jobs:
   process:
@@ -50,7 +50,7 @@ jobs:
             VALID=no
           else
             echo "$PKG_INFO">package.info
-            if ! sudo ./ll-killer generate;then
+            if ! sudo ./ll-killer generate package.info;then
               VALID=no
               MSG="$NO_PKG_MSG"
             else
@@ -130,6 +130,10 @@ jobs:
           sudo apt update
           sudo apt install linglong-builder linglong-box linglong-bin xdg-utils -y
           ll-cli --version
+      - name: Install apt-file
+        if: ${{steps.check.outputs.valid=='yes'}}
+        run: |
+          sudo apt install apt-file -y
       - name: Cache
         uses: actions/cache@v4
         if: ${{steps.check.outputs.valid=='yes'}}
@@ -141,12 +145,27 @@ jobs:
         id: build
         if: ${{steps.check.outputs.valid=='yes'}}
         run: |
+          function output(){
+            echo "$1<<EOF" >>$GITHUB_OUTPUT
+            echo "$2" >>$GITHUB_OUTPUT
+            echo "EOF" >>$GITHUB_OUTPUT
+          }
           if [ "${{env.NO_BUILD}}" != "true" ];then
             sudo mkdir -p $XDG_RUNTIME_DIR
             sudo chown -R 1001:1001 $XDG_RUNTIME_DIR
             sudo chmod 0700 $XDG_RUNTIME_DIR
-            ll-builder build 2>&1 | tee build.log
+            ./ll-killer build-and-check >&1 | tee build.log
             ll-builder export -l
+            MISSING="$(cat ldd-check.log)"
+            FOUND="$(cat ldd-found.log)"
+            MSG=""
+            if [ -n "$FOUND" ];then
+              MSG="$MSG $(printf "${MSG_FOUND}\n" "$FOUND")"
+            fi
+            if [ -n "$MISSING" ];then
+              MSG="$MSG $(printf "${MSG_MISSING}\n" "$MISSING")"
+            fi
+            output message "$MSG"
           else
             echo "test" > "${{steps.check.outputs.package}}_binary.layer"
           fi
@@ -159,6 +178,8 @@ jobs:
           BODY: ${{ github.event.issue.body }}
           XDG_RUNTIME_DIR: /run/user/1001
           TAG: self-build-${{github.event.issue.number}}
+          MSG_MISSING: "缺失以下文件:\n```\n%s\n```\n"
+          MSG_FOUND: "自动添加了以下库:\n```\n%s\n```\n"
         working-directory: ${{ env.WORKING_DIR }}
       - name: Release
         if: ${{steps.check.outputs.valid=='yes'}}
@@ -175,6 +196,7 @@ jobs:
             ```yaml
             ${{steps.check.outputs.linglong}}
             ```
+            ${{steps.build.outputs.message}}
           prerelease: ${{github.event.issue.state=='open'}}
           files: |
             package.info

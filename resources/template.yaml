@@ -14,4 +14,4 @@ base: {APP_BASE}
 runtime: {APP_RUNTIME}
 
 build: |
-  exec "{LL_KILLER_EXEC}" build
+  exec "{LL_KILLER_EXEC}" build {PKG_INFO_FILE}
